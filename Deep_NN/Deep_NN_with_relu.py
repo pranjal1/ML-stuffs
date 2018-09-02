@@ -1,25 +1,22 @@
-# in this project, I will aim to develop a deep neural network from scratch step by step building helper functions.
-
-#import necessary libraries
-
 import numpy as np
 from sklearn.datasets.samples_generator import make_blobs,make_moons,make_circles,make_s_curve
 from matplotlib import pyplot
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
-lam=0.01
+#for reLU if the learning rate is very high, the parameters will not converge and jump to infinity
 
-#working under the assumption that I have already obtained the training and testing datasets
+lam = 0.1 
 
-
+np.random.seed(42)
 #Defining model parameters and initializing them
 
 def initialize_parameters_deep(layer_dims): #layer_dims is a list containing the number of hidden units in each layer.
+	#np.random.seed(3)
 	l = len(layer_dims)
 	parameters = {} 
 	for i in range(1,len(layer_dims)):
-		parameters["W"+str(i)] = np.random.randn(layer_dims[i],layer_dims[i-1])*0.01		
+		parameters["W"+str(i)] = np.random.randn(layer_dims[i],layer_dims[i-1])*np.sqrt(float(2)/layer_dims[i-1])		
 		parameters["b"+str(i)] = np.zeros((layer_dims[i],1))
 	return parameters	
 
@@ -45,23 +42,20 @@ def linear_activation_forward(A_prev,W,b,activation):
 
 
 	if (activation == "relu"):
-		A = np.maximum(Z,-0.0001) #compares element-wise Z and broadcasted "0", and stores result in A
+		A = np.maximum(-0.0001,Z) #compares element-wise Z and broadcasted "0", and stores result in A
 		activation_cache = (A,Z)
 	
 	cache = (linear_cache,activation_cache)
 	return A,cache
 
 
-
-
-#now, we can implement a function that takes X(input) and parameters and provide prediciton AL and all caches
-
 def L_model_forward(X, parameters):
 	#numbr of layers
 	l = len(parameters)//2 #parameter is a dictionary with 2 parameters(W,b) for each layer, so this works	
 	A_prev = X
 	caches = []
-	#loop for l-1 layers using ReLU
+	i=0
+	#loop for l-1 layers using relu
 	for i in range(1,l):
 		A,cache = linear_activation_forward(A_prev,parameters["W"+str(i)],parameters["b"+str(i)],activation="relu")	
 		A_prev = A
@@ -76,18 +70,21 @@ def L_model_forward(X, parameters):
 
 #compute cost
 def compute_cost(AL,Y,caches):
+	#lam = 0.5 #hyper_param
 	m = Y.shape[1]
-	cost = (-float(1)/m)*np.sum((np.multiply(Y,np.log(AL)),np.multiply(1-Y,np.log(1-AL))))  
+	
+	lg1 = np.log(AL)
+	lg2 = np.log(1-AL)
+
+	cost = (-float(1)/m)*np.sum((np.multiply(Y,lg1),np.multiply(1-Y,lg2)))  
 	cost = np.squeeze(cost)     #squeeze out the cost [[17]]--->17
 	reg_loss = 0
 	for i in caches:
 		lin,act = i
 		A,W,b = lin
 		reg_loss = reg_loss + np.squeeze(np.sum(np.multiply(W,W)))
-	print "l2 = "+str(reg_loss)
-	return cost+lam*reg_loss    	
-	return cost		
-
+		#print "l2 = "+str(reg_loss)
+	return cost+0.5*lam*reg_loss		
 
 
 
@@ -97,10 +94,10 @@ def compute_cost(AL,Y,caches):
 
 #this function computes dW[l],db[l] and dA[l-1] given dZ[l] and (W,A[l-1]) from "linear cache"
 def linear_backward(dZ,cache):#cache is linear_cache
+	
 	A_prev,W,b = cache
 	m = A_prev.shape[1] #X.shape[1] = A_prev.shape[1] = m
-	
-	dW = (float(1)/m) * np.dot(dZ,A_prev.T)	
+	dW = (float(1)/m) * np.dot(dZ,A_prev.T)
 	db = (float(1)/m) * np.sum(dZ,axis = 1, keepdims = True)
 	dA_prev = np.dot(W.T,dZ)
 		
@@ -109,18 +106,18 @@ def linear_backward(dZ,cache):#cache is linear_cache
 #to compute the above function, we need dZ, so we get it from this function	
 #this function first computes dZ[l] given activation function and activation_cache to compute g'(Z[l]) and dA[l] from previous iteration of linear_backward and then linear_backward
 
-def linear_activation_backward(dA,cache,activation):#cache is activation_cache
+def linear_activation_backward(dA,cache,activation):
 	linear_cache,activation_cache = cache
-	Z,A = activation_cache
+	A,Z = activation_cache
 
 	#compute dZ first
 	if (activation == "relu"):
 		dRebydZ = Z 
-		dRebydZ[dRebydZ<=0] = -0.0001 
-		dRebydZ[dRebydZ>0] = 1
-		dZ = np.multiply(dA,dRebydZ)
+		dRebydZ[dRebydZ<0] = -0.0001 
+		dRebydZ[dRebydZ>=0] = 0.9999
+		dZ = np.multiply(dA,dRebydZ) 
 	if (activation == "sigmoid"):
-		dSigbydZ = np.multiply(A,(1-A)) #verify
+		dSigbydZ = np.multiply(A,1-A)
 		dZ = np.multiply(dA,dSigbydZ)
 
 	#now compute linear_backward	
@@ -140,15 +137,13 @@ def L_model_backward(AL, Y, caches):
 	
 	#dAL = -Y/AL - (1-Y)/(1-AL)
 	dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
-	
+
 	current_cache = caches[l-1]
 	grads["dA" + str(l-1)], grads["dW" + str(l)], grads["db" + str(l)] = linear_activation_backward(dAL, current_cache, activation = "sigmoid")
 	
 	
 	 # Loop from l=L-2 to l=0
 	for l in reversed(range(l-1)):
-		# lth layer: (RELU -> LINEAR) gradients.
-		# Inputs: "grads["dA" + str(l + 1)], current_cache". Outputs: "grads["dA" + str(l)] , grads["dW" + str(l + 1)] , grads["db" + str(l + 1)] 
 
 		current_cache = caches[l]
 		dA_prev_temp, dW_temp, db_temp = linear_activation_backward(grads["dA" + str(l+1)], current_cache, activation = "relu")
@@ -162,30 +157,25 @@ def L_model_backward(AL, Y, caches):
 
 #update parameters 
 def update_parameters(parameters, grads, learning_rate):
+	#lam = 0.75
 
-    
 	L = len(parameters) // 2 # number of layers in the neural network
 
 	# Update rule for each parameter. Use a for loop.
 
 	for l in range(L):
-		parameters["W" + str(l+1)] = parameters["W" + str(l+1)] - learning_rate * grads["dW" + str(l+1)] - lam * parameters["W" + str(l+1)]
+		parameters["W" + str(l+1)] = parameters["W" + str(l+1)] - learning_rate * grads["dW" + str(l+1)] - learning_rate * lam * parameters["W" + str(l+1)]
 		parameters["b" + str(l+1)] = parameters["b" + str(l+1)] - learning_rate * grads["db" + str(l+1)]
 
 	return parameters	
 
-def predict(X,parameters):
-	AL,caches = L_model_forward(X, parameters)
-	predictions = (AL>0.5)*1 #setting 0.5 as threshold and making predictions as 1 if greater than 0.5 and 0 otherwise.
-	return predictions
 
 
 
 
-def L_layer_model(X, Y, layers_dims, learning_rate = 1.2, num_iterations = 3000, print_cost=False):#lr was 0.009
+def L_layer_model(X, Y, layers_dims, learning_rate = 0.2, num_iterations = 3000, print_cost=False):#lr was 0.2 for blobs and [2,2,1], lam =1 worked
 
 
-	np.random.seed(1)
 	costs = []                         # keep track of cost
 
 
@@ -195,15 +185,13 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 1.2, num_iterations = 3000,
 	# Loop (gradient descent)
 	for i in range(0, num_iterations):
 
-		# Forward propagation: [LINEAR -> RELU]*(L-1) -> LINEAR -> SIGMOID.
+		# Forward propagation: [LINEAR -> relu]*(L-1) -> LINEAR -> SIGMOID.
 
 		AL, caches = L_model_forward(X, parameters)
-        
-        
-		# Compute cost.
+
 
 		cost = compute_cost(AL, Y, caches)
-        
+         
     
 		# Backward propagation.
 
@@ -230,6 +218,11 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 1.2, num_iterations = 3000,
     
 	return parameters
 
+def predict(X,parameters):
+	AL,caches = L_model_forward(X, parameters)
+	predictions = (AL>0.5)*1 #setting 0.5 as threshold and making predictions as 1 if greater than 0.5 and 0 otherwise.
+	return predictions
+
 def color_set(Z):
 	cols = []
 	for x in Z:
@@ -251,33 +244,42 @@ def plot_decision_boundary(X,Y,parameters):
 	Z = ((A)>0.5)*1
 	fig = plt.figure()
 	cols = color_set(Z[0,:])
-	plt.scatter(xx, yy,c=cols,s=40, cmap=plt.cm.Spectral)
-	plt.scatter(X_train[0,:], X_train[1,:],c=Y_train[0,:],s=40, cmap=plt.cm.Spectral)
+	plt.scatter(xx, yy,c=cols,s=10, cmap=plt.cm.Spectral)
+	plt.scatter(X_train[0,:], X_train[1,:],c=Y_train[0,:],s=10, cmap=plt.cm.Spectral)
 	plt.xlim(xx.min(), xx.max())
 	plt.ylim(yy.min(), yy.max())
-	fig.savefig('boundary_s_neurons.png')
+	fig.savefig('blobs_relu_reg_2_10_10_5_1.png')
 
 
-np.random.seed(43)
+
 # generate 2d classification dataset
 #X, y = make_s_curve(n_samples=100, noise=0.1) #not applicable
-X, y = make_blobs(n_samples=8000, centers=2, n_features=2)
-#X, y = make_moons(n_samples=5000, noise=0.1)
-#X, y = make_circles(n_samples=10000, noise=0.05)
+X, y = make_blobs(n_samples=5000, centers=2, n_features=2)
+#X, y = make_moons(n_samples=5000, noise=0.2)
+#X, y = make_circles(n_samples=5000, noise=0.05)
 X_train = X.T
 #print X_train.shape
 Y_train = y.reshape(1,y.shape[0])
 print X_train.shape,Y_train.shape
-#print Y_train.shape
 
+
+# scatter plot, dots colored by class value
+df = DataFrame(dict(x=X[:,0], y=X[:,1], label=y))
+colors = {0:'red', 1:'blue', 2:'green'}
+fig, ax = pyplot.subplots()
+grouped = df.groupby('label')
+for key, group in grouped:
+    group.plot(ax=ax, kind='scatter', x='x', y='y',s=10, label=key, color=colors[key])
+pyplot.show()
 
 
 #final model
 
-layers_dims = [2, 2, 5, 2, 1] #  4-layer model, [2, 2, 5, 2, 1],[2, 8, 5, 6, 1],[2, 2, 8, 2, 1] for random 43
-parameters = L_layer_model(X_train, Y_train, layers_dims, num_iterations = 1000, print_cost = True)
+layers_dims = [2,10,10,5,1]#[2, 7,5,2, 1] 
+parameters = L_layer_model(X_train, Y_train, layers_dims, num_iterations = 5000, print_cost = True)
 #tomorrow
 pred_train = predict(X_train, parameters)
+
 
 # Print training accuracy
 print ('Training Accuracy: %d' % float((np.dot(Y_train,pred_train.T) + np.dot(1-Y_train,1-pred_train.T))/float(Y_train.size)*100) + '%')

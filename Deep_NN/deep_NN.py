@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 lam = 0 #hyper parameter was 1 for blob
 
-np.random.seed(3)
+np.random.seed(42)
 #Defining model parameters and initializing them
 
 def initialize_parameters_deep(layer_dims): #layer_dims is a list containing the number of hidden units in each layer.
@@ -18,7 +18,7 @@ def initialize_parameters_deep(layer_dims): #layer_dims is a list containing the
 	l = len(layer_dims)
 	parameters = {} 
 	for i in range(1,len(layer_dims)):
-		parameters["W"+str(i)] = np.random.randn(layer_dims[i],layer_dims[i-1])*1		
+		parameters["W"+str(i)] = np.random.randn(layer_dims[i],layer_dims[i-1])*np.sqrt(float(1)/layer_dims[i-1])		
 		parameters["b"+str(i)] = np.zeros((layer_dims[i],1))
 	return parameters	
 
@@ -111,8 +111,8 @@ def linear_activation_backward(dA,cache,activation):#cache is activation_cache
 
 	#compute dZ first
 	if (activation == "tanh"):
-		tanhval = np.tanh(Z)
-		dZ = 1-np.power(tanhval,2)
+		#tanhval = np.tanh(Z)
+		dZ = 1-np.power(A,2)
 		dZ = np.multiply(dA,dZ) 
 	if (activation == "sigmoid"):
 		dSigbydZ = np.multiply(A,1-A)
@@ -248,15 +248,15 @@ def plot_decision_boundary(X,Y,parameters):
 	plt.scatter(X_train[0,:], X_train[1,:],c=Y_train[0,:],s=10, cmap=plt.cm.Spectral)
 	plt.xlim(xx.min(), xx.max())
 	plt.ylim(yy.min(), yy.max())
-	fig.savefig('moon_42_7_2_neurons.png')
+	fig.savefig('circles_tanh_2_10_5_1.png')
 
 
 
 # generate 2d classification dataset
 #X, y = make_s_curve(n_samples=100, noise=0.1) #not applicable
 #X, y = make_blobs(n_samples=100, centers=2, n_features=2)
-X, y = make_moons(n_samples=5000, noise=0.1)
-#X, y = make_circles(n_samples=10000, noise=0.05)
+#X, y = make_moons(n_samples=5000, noise=0.1)
+X, y = make_circles(n_samples=5000, noise=0.05)
 X_train = X.T
 #print X_train.shape
 Y_train = y.reshape(1,y.shape[0])
@@ -275,8 +275,8 @@ pyplot.show()
 
 #final model
 
-layers_dims = [2, 7,5,2, 1] 
-parameters = L_layer_model(X_train, Y_train, layers_dims, num_iterations = 2000, print_cost = True)
+layers_dims = [2,10,5,1]#[2, 7,5,2, 1] 
+parameters = L_layer_model(X_train, Y_train, layers_dims, num_iterations = 10000, print_cost = True)
 #tomorrow
 pred_train = predict(X_train, parameters)
 

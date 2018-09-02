@@ -1,0 +1,63 @@
+tf.one_hot:
+
+[1,2,3,0,2,1]
+
+[[ 0.  0.  0.  1.  0.  0.]
+ [ 1.  0.  0.  0.  0.  1.]
+ [ 0.  1.  0.  0.  1.  0.]
+ [ 0.  0.  1.  0.  0.  0.]]
+
+axis = 0, depth = 4
+
+
+[[ 0.  1.  0.  0.]
+ [ 0.  0.  1.  0.]
+ [ 0.  0.  0.  1.]
+ [ 1.  0.  0.  0.]
+ [ 0.  0.  1.  0.]
+ [ 0.  1.  0.  0.]]
+
+axis = 1/-1, depth =4 
+
+
+[[ 0.  0.  0.  1.  0.  0.]
+ [ 1.  0.  0.  0.  0.  1.]
+ [ 0.  1.  0.  0.  1.  0.]]
+
+depth = 3
+
+[1,2,4,0,2,1]
+
+[[ 0.  0.  0.  1.  0.  0.]
+ [ 1.  0.  0.  0.  0.  1.]
+ [ 0.  1.  0.  0.  1.  0.]]
+
+depth = 3
+
+[1,2,3,4,0,2,1]
+
+[[ 0.  0.  0.  0.  1.  0.  0.]
+ [ 1.  0.  0.  0.  0.  0.  1.]
+ [ 0.  1.  0.  0.  0.  1.  0.]]
+
+depth = 3
+
+
+
+
+
+tensorflow initialization of variables:
+
+=> to initialize weight of any layer using Xavier's initializer: tanh,sigmoid
+	
+W1 = tf.get_variable("W1",[nl,nl-1],initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+
+for He initialization: ReLU
+tf.contrib.layers.variance_scaling_initializer
+
+=> to initialize the bias of any layer to zero
+
+b1 = tf.get_variable("b1",[nl,1],initializer = tf.zeros_initializer())
+
+
+

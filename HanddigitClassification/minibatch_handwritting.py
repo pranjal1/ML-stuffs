@@ -256,7 +256,7 @@ y_encoded = onehot_encoded.T
 
 #final model
 
-layers_dims = [X_train.shape[0],20,10,y_encoded.shape[0]] 
+layers_dims = [X_train.shape[0],50,20,y_encoded.shape[0]] 
 parameters = L_layer_model(X_train, y_encoded, layers_dims, num_epochs = 100,batch_size =64, print_cost = True)
 #tomorrow
 pred_train = predict(X_train, parameters)
@@ -275,10 +275,10 @@ diff_mtx = diff_mtx[np.where(diff_mtx == 0)]
 print ('Testing Accuracy: = '+ str(float(diff_mtx.size)/pred_train.size * 100)+'%')
 
 #save parameters
-np.save('parameters.npy', parameters) 
+np.save('parameters_no_momentum.npy', parameters) 
 
 # Load
-#parameters = np.load('parameters.npy').item()
+#parameters = np.load('parameters_no_momentum.npy').item()
 
 
 

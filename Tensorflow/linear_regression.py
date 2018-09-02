@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from sklearn.datasets import fetch_california_housing
-
+import matplotlib.pyplot as plt
 
 housing = fetch_california_housing()
 m, n = housing.data.shape
@@ -24,10 +24,20 @@ XT = tf.transpose(X)
 #the next node will compute the theta matrix,(this is needed to make predictions)
 theta = tf.matmul(tf.matmul(tf.matrix_inverse(tf.matmul(XT,X)),XT),y)
 
+predictions = tf.matmul(X,theta)
 
 #execution of graph
 with tf.Session() as sess:
 	theta_val = theta.eval()
+	predictions = predictions.eval()
 
-print theta_val
-	
+
+
+y_target = housing.target.reshape(-1, 1)
+#print np.c_[predictions,y_target,predictions-y_target]
+x_axis = np.arange(len(y_target))
+plt.plot(x_axis, predictions-y_target, "r.")
+plt.plot(x_axis, y_target, "b.")
+plt.show()
+
+
