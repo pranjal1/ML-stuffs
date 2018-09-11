@@ -35,8 +35,7 @@ Y_test = onehot_encoded_test
 print X_train.shape, X_test.shape
 print Y_train.shape, Y_test.shape
 
-n_epochs = 20
-batch_size = 128
+n_epochs = 10
 
 #mini-batch creation
 def random_mini_batches(X, Y, mini_batch_size = 64, seed = 0):
@@ -122,7 +121,7 @@ with tf.Session() as sess:
 		epoch_cost = 0
 		minibatches = random_mini_batches(X_train, Y_train, mini_batch_size = 128, seed = epoch)
 		for X_batch,Y_batch in minibatches:
-			batch_loss = sess.run(loss,feed_dict={X:X_batch,Y:Y_batch})
+			batch_loss,_ = sess.run([loss,training_op],feed_dict={X:X_batch,Y:Y_batch})
 			epoch_cost += batch_loss / len(minibatches)
 			if (cntr % 100 == 0):
 				print(epoch, " epoch "," loop ",cntr,"batch loss ",batch_loss)
